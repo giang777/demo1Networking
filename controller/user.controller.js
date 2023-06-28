@@ -1,47 +1,48 @@
-const model = require('../model/products.model')
+const model = require('../model/user.model')
+const bcrypt = require('bcrypt');
 
-const listProduct = async (req, res, next) => {
+const listUser = async (req, res, next) => {
     try {
-        //lọc theo giá
-        if (req.query.price) {
-            let list = await model.productModel.find({ price: Number(req.query.price) })//lấy danh sách sản phẩm
+        //lọc theo username
+        if (req.query.username) {
+            let data = await model.UserModel.findOne({ username: req.query.username })//lấy danh sách sản phẩm
             return res.status(200).json({
-                data: [...list],
+                data: data,
                 msg: "Thành công",
-                query_price: req.query.price,
+                query_username: req.query.username,
                 success: true,
             })
         }
-        //lọc theo tên
-        if (req.query.name) {
-            let list = await model.productModel.find({ name: req.query.name });
+        //lọc theo email
+        if (req.query.email) {
+            let list = await model.UserModel.find({ email: req.query.email });
             return res.status(200).json({
                 data: [...list],
                 msg: "Thành công",
-                query_name: req.query.name,
+                query_email: req.query.email,
                 success: true,
             })
         }
-        //lọc theo loại
-        if (req.query.id_cat) {
-            let list = await model.productModel.find({ id_cat: req.query.id_cat }).populate("id_cat", "name");
+        //lọc theo vai trò
+        if (req.query.id_role) {
+            let list = await model.UserModel.find({ id_role: req.query.id_role }).populate("id_role", "");
             return res.status(200).json({
                 data: [...list],
                 msg: "Thành công",
-                query_idCat: req.query.id_cat,
+                query_idRole: req.query.id_role,
                 success: true,
             })
         }
 
         //api phân trang
         if (req.query.limit && req.query.page) {
-            //api phân trang http://localhost:3000/products/list?limit=&page=
+            //api phân trang http://localhost:3000/users/list?limit=1&page=2
             console.log(req.query.page);
             console.log("Limit");
             let skip = (req.query.page - 1) * req.query.limit;//số trang bỏ qua
 
-            let total = await model.productModel.countDocuments();//tổng số bản ghi
-            let data = await model.productModel.find().skip(skip).limit(req.query.limit);//data lấy được
+            let total = await model.UserModel.countDocuments();//tổng số bản ghi
+            let data = await model.UserModel.find().skip(skip).limit(req.query.limit);//data lấy được
 
             let totalPage = Math.ceil(total / req.query.limit);//tổng số trang
             if (req.query.page > totalPage) {
@@ -66,7 +67,7 @@ const listProduct = async (req, res, next) => {
             })
         }
 
-        let list = await model.productModel.find();
+        let list = await model.UserModel.find();
         return res.status(200).json({
             data: [...list],
             msg: "Thành công",
@@ -85,34 +86,29 @@ const listProduct = async (req, res, next) => {
 }
 
 
-const idProduct = async (req, res, next) => {
-    try {
-        let data = await model.productModel.findById({ _id: req.query.id });//lấy sản phẩm theo id
-        return res.status(200).json({
-            data: data,
-            msg: "Thành công",
-            success: true,
-        })
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            msg: "Thất bại",
-            success: false,
-        })
-    }
-}
 
-const addProduct = async (req, res, next) => {
+
+const addUser = async (req, res, next) => {
     try {
-        let product = new model.productModel({
-            name: req.body.name,
-            price: req.body.price,
-            desc: req.body.desc,
-            image: req.body.image,
-            description: req.body.description,
-            id_cat: req.body.id_cat,
+        let userCheck = await model.UserModel.findOne({ username: req.body.username })
+
+        if (userCheck) {
+            return res.status(203).json({
+                msg: "Tài khoản đã tồn tại",
+                success: false,
+            })
+        }
+
+        let hash = await bcrypt.hash(req.body.passwrd, 10);//mã hóa passwrd
+        console.log(hash);
+
+        let user = new model.UserModel({
+            username: req.body.username,
+            email: req.body.email,
+            passwrd: hash,
+            id_role: req.body.id_role,
         })
-        await product.save();
+        await user.save();
         return res.status(201).json({
             msg: "Thành công",
             success: true,
@@ -126,9 +122,9 @@ const addProduct = async (req, res, next) => {
     }
 }
 
-const deleteProduct = async (req, res, next) => {
+const deleteUser = async (req, res, next) => {
     try {
-        let result = await model.productModel.deleteOne({ _id: req.params.id });//lấy sản phẩm theo id
+        let result = await model.UserModel.deleteOne({ _id: req.params.id });//lấy sản phẩm theo id
         if (result.deletedCount) {
             return res.status(200).json({
                 msg: "Thành công",
@@ -150,18 +146,28 @@ const deleteProduct = async (req, res, next) => {
     }
 }
 
-const updateProduct = async (req, res, next) => {
+const updateUser = async (req, res, next) => {
     try {
-        let product = new model.productModel({ _id: req.params.id });
+        let userCheck = await model.UserModel.findOne({ username: req.body.username })
+
+        if (userCheck) {
+            return res.status(203).json({
+                msg: "Tài khoản đã tồn tại",
+                success: false,
+            })
+        }
+
+        let hash = await bcrypt.hash(req.body.passwrd, 10);//mã hóa passwrd
+        let product = new model.UserModel({ _id: req.params.id });
         let result = await product.updateOne({
-            name: req.body.name,
-            price: req.body.price,
-            desc: req.body.desc,
-            id_cat: req.body.id_cat,
+            username: req.body.username,
+            email: req.body.email,
+            passwrd: hash,
+            id_role: req.body.id_role,
         });
         console.log(result);
         if (result.matchedCount) {
-            let data = await model.productModel.findById({ _id: req.params.id });
+            let data = await model.UserModel.findById({ _id: req.params.id });
             return res.status(200).json({
                 data: data,
                 msg: "Thành công",
@@ -185,7 +191,7 @@ const updateProduct = async (req, res, next) => {
 
 
 
-const listCats = async (req, res, next) => {
+const listRole = async (req, res, next) => {
     try {
 
         if (req.query.limit && req.query.page) {
@@ -194,8 +200,8 @@ const listCats = async (req, res, next) => {
             console.log("Limit");
             let skip = (req.query.page - 1) * req.query.limit;//số trang bỏ qua
 
-            let total = await model.catModel.countDocuments();//tổng số bản ghi
-            let data = await model.catModel.find().skip(skip).limit(req.query.limit);//data lấy được
+            let total = await model.RoleModel.countDocuments();//tổng số bản ghi
+            let data = await model.RoleModel.find().skip(skip).limit(req.query.limit);//data lấy được
 
             let totalPage = Math.ceil(total / req.query.limit);//tổng số trang
             if (req.query.page > totalPage) {
@@ -219,7 +225,7 @@ const listCats = async (req, res, next) => {
                 success: true,
             })
         }
-        let list = await model.catModel.find();
+        let list = await model.RoleModel.find();
         return res.status(200).json({
             data: [...list],
             msg: "Thành công",
@@ -235,12 +241,13 @@ const listCats = async (req, res, next) => {
 
 }
 
-const addCats = async (req, res, next) => {
+const addRole = async (req, res, next) => {
     try {
-        let cats = new model.catModel({
+        let role = new model.RoleModel({
             name: req.body.name,
+            status: req.body.status
         })
-        await cats.save();
+        await role.save();
         return res.status(201).json({
             msg: "Thành công",
             success: true,
@@ -257,10 +264,10 @@ const addCats = async (req, res, next) => {
 
 const idCats = async (req, res, next) => {
     try {
-        let cats = await model.catModel.findById({ _id: req.query.id });
-        if (cats) {
+        let role = await model.RoleModel.findById({ _id: req.query.id });
+        if (role) {
             return res.status(200).json({
-                data: cats,
+                data: role,
                 msg: "Thành công",
                 success: true,
             })
@@ -279,9 +286,9 @@ const idCats = async (req, res, next) => {
 
 }
 
-const deleteCats = async (req, res, next) => {
+const deleteRole = async (req, res, next) => {
     try {
-        let result = await model.catModel.deleteOne({ _id: req.params.id })
+        let result = await model.RoleModel.deleteOne({ _id: req.params.id })
         if (result.deletedCount) {
             return res.status(200).json({
                 msg: "Thành công",
@@ -303,14 +310,14 @@ const deleteCats = async (req, res, next) => {
 
 }
 
-const updateCats = async (req, res, next) => {
+const updateRole = async (req, res, next) => {
     try {
-        let cats = new model.catModel({
+        let role = new model.RoleModel({
             _id: req.params.id
         })
-        let result = await cats.updateOne({ name: req.body.name });
+        let result = await role.updateOne({ name: req.body.name, status: req.body.status });
         if (result.matchedCount) {
-            let data = await model.catModel.findById({ _id: req.params.id });
+            let data = await model.RoleModel.findById({ _id: req.params.id });
             return res.status(200).json({
                 data: data,
                 msg: "Thành công",
@@ -333,9 +340,9 @@ const updateCats = async (req, res, next) => {
 }
 
 module.exports = {
-    listProduct, idProduct,
-    addProduct, deleteProduct,
-    updateProduct, addCats,
-    listCats, idCats,
-    deleteCats, updateCats
+    listUser,
+    addUser, deleteUser,
+    updateUser, addRole,
+    listRole,
+    deleteRole, updateRole
 }

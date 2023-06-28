@@ -8,14 +8,23 @@ const Products = new db.mongoose.Schema(
         },
         price: {
             type: Number,
-            required: true
+            required: true,
+            default: 0,
         },
         desc: {
             type: String,
             required: true,
         },
+        image: {
+            type: String,
+            required: true,
+        },
+        description: {
+            type: String,
+            required: true,
+        },
         id_cat: {
-            type : db.mongoose.Schema.Types.ObjectId, ref:'catModel'
+            type: db.mongoose.Schema.Types.ObjectId, ref: 'catModel'
         }
     },
     {
