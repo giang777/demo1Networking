@@ -148,14 +148,6 @@ const deleteUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
     try {
-        let userCheck = await model.UserModel.findOne({ username: req.body.username })
-
-        if (userCheck) {
-            return res.status(203).json({
-                msg: "Tài khoản đã tồn tại",
-                success: false,
-            })
-        }
 
         let hash = await bcrypt.hash(req.body.passwrd, 10);//mã hóa passwrd
         let product = new model.UserModel({ _id: req.params.id });
@@ -186,6 +178,34 @@ const updateUser = async (req, res, next) => {
             msg: "Thất bại",
             success: false,
         })
+    }
+}
+
+const login = async (req, res, next) => {
+    try {
+        let userCheck = await model.UserModel.findOne({ username: req.body.username });
+        if (userCheck) {
+            let checkPasswrd = await bcrypt.compare(req.body.passwrd, userCheck.passwrd);
+            if (checkPasswrd) {
+                let { username, email, id_role } = userCheck;
+                return res.status(200).json({
+                    data: { username, email, id_role },
+                    msg: "Thành công",
+                    success: true,
+                })
+            }
+            return res.status(203).json({
+                msg: "Sai mật khẩu",
+                success: false,
+            })
+        }
+
+        return res.status(203).json({
+            msg: "Tài khoản không tồn tại",
+            success: false,
+        })
+    } catch (error) {
+
     }
 }
 
@@ -344,5 +364,5 @@ module.exports = {
     addUser, deleteUser,
     updateUser, addRole,
     listRole,
-    deleteRole, updateRole
+    deleteRole, updateRole, login,
 }

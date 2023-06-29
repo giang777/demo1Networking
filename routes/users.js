@@ -10,6 +10,8 @@ router.patch('/update/:id',userCTL.updateUser)
 
 router.get('/listRole',userCTL.listRole);
 router.post('/addRole',userCTL.addRole);
-router.delete('/deleteRole/:id',userCTL.deleteRole)
-router.patch('/updateRole/:id',userCTL.updateRole)
+router.delete('/deleteRole/:id',userCTL.deleteRole);
+router.patch('/updateRole/:id',userCTL.updateRole);
+
+router.post('/login',userCTL.login);
 module.exports = router;
