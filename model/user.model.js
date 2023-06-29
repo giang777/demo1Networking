@@ -2,6 +2,7 @@ const db = require('./data.model');
 
 const Users = new db.mongoose.Schema(
     {
+        //model
         username: {
             type: String,
             required: true,
